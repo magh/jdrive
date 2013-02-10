@@ -1,0 +1,50 @@
+package jdrive.cli;
+
+import static jdrive.ulib.Util.log;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+import jdrive.glib.FileSingleCredentialStore;
+import jdrive.glib.GoogleUtil;
+import jdrive.lib.JDriveUtil;
+
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+
+public class JDriveCli {
+
+	public void run() throws IOException {
+		final FileSingleCredentialStore store = new FileSingleCredentialStore(
+				".jdrive");
+		final GoogleCredential credential = JDriveUtil.authenticateDrive(store, callback);
+
+		final String fileId = GoogleUtil.uploadFile(credential, "document.txt",
+				"My document", "A test document", "text/plain");
+		log("File ID: " + fileId);
+	}
+
+	private final GoogleUtil.AuthorizationCodeCallback callback = new GoogleUtil.AuthorizationCodeCallback() {
+		@Override
+		public String getAuthorizationCode(final String authorizationUrl) {
+			log("Please open the following URL in your browser then type the authorization code:");
+			log("  " + authorizationUrl);
+			final BufferedReader br = new BufferedReader(new InputStreamReader(
+					System.in));
+			String authorizationCode = null;
+			try {
+				authorizationCode = br.readLine();
+				log("authorizationCode=" + authorizationCode);
+			} catch (final IOException e) {
+				log("ERROR " + e.getMessage());
+			}
+			return authorizationCode;
+		}
+	};
+
+	public static void main(final String[] args) throws IOException {
+		final JDriveCli cli = new JDriveCli();
+		cli.run();
+	}
+
+}
