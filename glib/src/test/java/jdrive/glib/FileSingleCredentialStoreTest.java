@@ -20,13 +20,13 @@ public class FileSingleCredentialStoreTest {
 		final FileSingleCredentialStore store = new FileSingleCredentialStore(
 				STORE);
 		store.clear();
-		final GoogleCredential in = GoogleUtil.newGoogleCredential(CLIENT_ID,
+		final GoogleCredential in = DriveUtil.newGoogleCredential(CLIENT_ID,
 				CLIENT_SECRET);
 		in.setAccessToken("accessToken");
 		in.setRefreshToken("refreshToken");
 		in.setExpirationTimeMilliseconds(3600l);
 		store.store(in);
-		final GoogleCredential out = GoogleUtil.newGoogleCredential(CLIENT_ID,
+		final GoogleCredential out = DriveUtil.newGoogleCredential(CLIENT_ID,
 				CLIENT_SECRET);
 		store.load(out);
 		assertEquals("accessToken", out.getAccessToken());
@@ -39,18 +39,18 @@ public class FileSingleCredentialStoreTest {
 		final FileSingleCredentialStore store = new FileSingleCredentialStore(
 				STORE);
 		store.clear();
-		final GoogleCredential in = GoogleUtil.newGoogleCredential(CLIENT_ID,
+		final GoogleCredential in = DriveUtil.newGoogleCredential(CLIENT_ID,
 				CLIENT_SECRET);
 		in.setAccessToken("accessToken");
 		in.setRefreshToken("refreshToken");
 		in.setExpirationTimeMilliseconds(3600l);
 		store.store(in);
-		final GoogleCredential in2 = GoogleUtil.newGoogleCredential(CLIENT_ID,
+		final GoogleCredential in2 = DriveUtil.newGoogleCredential(CLIENT_ID,
 				CLIENT_SECRET);
 		in2.setAccessToken("accessToken2");
 		in2.setExpirationTimeMilliseconds(3602l);
 		store.store(in2);
-		final GoogleCredential out = GoogleUtil.newGoogleCredential(CLIENT_ID,
+		final GoogleCredential out = DriveUtil.newGoogleCredential(CLIENT_ID,
 				CLIENT_SECRET);
 		store.load(out);
 		assertEquals("accessToken2", out.getAccessToken());
@@ -62,14 +62,14 @@ public class FileSingleCredentialStoreTest {
 	public void testClear() throws IOException {
 		final FileSingleCredentialStore store = new FileSingleCredentialStore(
 				STORE);
-		final GoogleCredential in = GoogleUtil.newGoogleCredential(CLIENT_ID,
+		final GoogleCredential in = DriveUtil.newGoogleCredential(CLIENT_ID,
 				CLIENT_SECRET);
 		in.setAccessToken("accessToken");
 		in.setRefreshToken("refreshToken");
 		in.setExpirationTimeMilliseconds(3600l);
 		store.store(in);
 		store.clear();
-		final GoogleCredential out = GoogleUtil.newGoogleCredential(CLIENT_ID,
+		final GoogleCredential out = DriveUtil.newGoogleCredential(CLIENT_ID,
 				CLIENT_SECRET);
 		store.load(out);
 		assertNull(out.getAccessToken());

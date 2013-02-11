@@ -1,9 +1,9 @@
 package jdrive.glib;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 
 import jdrive.ulib.Util;
@@ -26,11 +26,11 @@ public class FileSingleCredentialStore implements SingleCredentialStore {
 			return false;
 		}
 		final Gson gson = new Gson();
-		final String json = Util.readStream(new FileInputStream(store));
-		if (Util.isEmpty(json)) {
+		if (!store.exists()) {
 			return false;
 		}
-		final CredentialData data = gson.fromJson(json, CredentialData.class);
+		final FileReader reader = new FileReader(store);
+		final CredentialData data = gson.fromJson(reader, CredentialData.class);
 		return data.populate(credential);
 	}
 

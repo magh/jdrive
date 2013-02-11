@@ -1,0 +1,8 @@
+#!/bin/bash
+PWD=`dirname $0`/../library
+CLASSPATH=
+for a in $PWD/*; do
+	CLASSPATH=$a:$CLASSPATH
+done
+CLASSPATH=`echo $CLASSPATH | sed 's/\(.*\).$/\1/'`
+java -cp $CLASSPATH jdrive.cli.JDriveCli $*

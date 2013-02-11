@@ -3,4 +3,4 @@
 .settings/
 target/
 jdrive-cli/.jdrive
-jdrive-lib/src/main/resources/client_secrets.json.my
+jdrive-lib/src/main/resources/client_secrets.json

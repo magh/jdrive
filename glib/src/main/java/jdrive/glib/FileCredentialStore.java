@@ -1,15 +1,12 @@
 package jdrive.glib;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
-import jdrive.ulib.Util;
-
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.auth.oauth2.CredentialStore;
@@ -21,15 +18,16 @@ public class FileCredentialStore implements CredentialStore {
 
 	private final Map<String, CredentialData> storeMap;
 
+	@SuppressWarnings("unchecked")
 	public FileCredentialStore(final String fileName)
 			throws FileNotFoundException, IOException {
 		store = new File(fileName);
-		final Gson gson = new Gson();
-		final String json = Util.readStream(new FileInputStream(store));
-		if (Util.isEmpty(json)) {
-			storeMap = new HashMap<String, CredentialData>();
+		if (store.exists()) {
+			final FileReader reader = new FileReader(store);
+			final Gson gson = new Gson();
+			storeMap = gson.fromJson(reader, Map.class);
 		} else {
-			storeMap = gson.fromJson(json, Map.class);
+			storeMap = new HashMap<String, CredentialData>();
 		}
 	}
 

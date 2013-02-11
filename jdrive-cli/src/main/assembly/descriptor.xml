@@ -1,0 +1,33 @@
+<assembly>
+	<formats>
+		<format>zip</format>
+	</formats>
+	<baseDirectory>jdrive</baseDirectory>
+	<fileSets>
+		<fileSet>
+			<directory>src/main/config/bin</directory>
+			<outputDirectory>bin</outputDirectory>
+			<includes>
+				<include>**</include>
+			</includes>
+			<fileMode>0755</fileMode>
+			<directoryMode>0755</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>target</directory>
+			<outputDirectory>library</outputDirectory>
+			<includes>
+				<include>*.jar</include>
+			</includes>
+			<fileMode>0644</fileMode>
+			<directoryMode>0755</directoryMode>
+		</fileSet>
+	</fileSets>
+	<dependencySets>
+		<dependencySet>
+			<outputDirectory>/library</outputDirectory>
+			<fileMode>0644</fileMode>
+			<directoryMode>0755</directoryMode>
+		</dependencySet>
+	</dependencySets>
+</assembly>

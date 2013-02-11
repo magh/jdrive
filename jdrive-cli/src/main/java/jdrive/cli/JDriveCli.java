@@ -6,25 +6,26 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import jdrive.glib.DriveUtil;
 import jdrive.glib.FileSingleCredentialStore;
-import jdrive.glib.GoogleUtil;
 import jdrive.lib.JDriveUtil;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.services.drive.Drive;
 
 public class JDriveCli {
 
 	public void run() throws IOException {
 		final FileSingleCredentialStore store = new FileSingleCredentialStore(
 				".jdrive");
-		final GoogleCredential credential = JDriveUtil.authenticateDrive(store, callback);
+		final GoogleCredential credential = JDriveUtil.authenticate(store, callback);
 
-		final String fileId = GoogleUtil.uploadFile(credential, "document.txt",
-				"My document", "A test document", "text/plain");
-		log("File ID: " + fileId);
+		final Drive service = DriveUtil.getDriveService(credential);
+
+		JDriveUtil.sync(service);
 	}
 
-	private final GoogleUtil.AuthorizationCodeCallback callback = new GoogleUtil.AuthorizationCodeCallback() {
+	private final DriveUtil.AuthorizationCodeCallback callback = new DriveUtil.AuthorizationCodeCallback() {
 		@Override
 		public String getAuthorizationCode(final String authorizationUrl) {
 			log("Please open the following URL in your browser then type the authorization code:");
