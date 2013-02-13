@@ -156,4 +156,8 @@ public class Util {
 		}
 	}
 
+	public static boolean valueOf(final Boolean val) {
+		return (val != null) && val;
+	}
+
 }

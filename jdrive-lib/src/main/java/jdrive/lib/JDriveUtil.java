@@ -3,11 +3,10 @@ package jdrive.lib;
 import static jdrive.ulib.Util.log;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-
-import javax.activation.MimetypesFileTypeMap;
 
 import jdrive.glib.ClientSecrets;
 import jdrive.glib.DriveUtil;
@@ -53,9 +52,90 @@ public class JDriveUtil {
 		uploadNewRecursive(service, fileMap, new java.io.File("."));
 	}
 
+	private static void mkdirs(final List<File> files,
+			final DriveFileMap fileMap) {
+		log("mkdirs");
+		for (final File file : files) {
+			if (!file.getEditable()
+					|| !DriveUtil.MIME_FOLDER.equals(file.getMimeType())) {
+				continue;
+			}
+			// log("file=" + file.toPrettyString());
+			final String fullPath = fileMap.put(file, files);
+			final java.io.File file2 = new java.io.File(fullPath);
+			if (!file2.exists()) {
+				log("mkdir " + fullPath);
+				file2.mkdirs();
+			}
+		}
+	}
+
+	private static void syncLatest(final Drive service, final List<File> files,
+			final DriveFileMap fileMap) throws IOException {
+		log("syncLatest");
+		for (final File file : files) {
+			if (!file.getEditable()
+					|| DriveUtil.MIME_FOLDER.equals(file.getMimeType())) {
+				continue;
+			}
+			final String filePath = fileMap.put(file, files);
+			final java.io.File local = new java.io.File(filePath);
+
+			final boolean localExists = local.exists();
+			final boolean remoteTrashed = Util.valueOf(file
+					.getExplicitlyTrashed());
+			if (!localExists) {
+				if (remoteTrashed) {
+					log("Remote trashed (nop): " + filePath);
+				} else {
+					log("Download remote (!local): " + filePath);
+					download(service, filePath, file);
+				}
+			} else {
+				final boolean equals = equals(filePath, file);
+				final boolean localNewer = local.lastModified() > getDate(file);
+				if (remoteTrashed) {
+					if (equals) {
+						log("Deleting local (trashed): " + filePath);
+						local.delete();
+					} else if (localNewer) {
+						log("Uploading local (newer, trashed): " + filePath);
+						overwrite(service, filePath, file);
+					} else {
+						log("Deleting local (trashed): " + filePath);
+						local.delete();
+					}
+				} else {
+					if (equals) {
+						log("equals (nop): " + filePath);
+					} else if (localNewer) {
+						log("Uploading local (newer): " + filePath);
+						overwrite(service, filePath, file);
+					} else {
+						log("Downloading remote: " + filePath);
+						download(service, filePath, file);
+					}
+				}
+			}
+		}
+	}
+
+	private static void download(final Drive service, final String filePath,
+			final File file) throws IOException {
+		final String downloadUrl = file.getDownloadUrl();
+		if (downloadUrl != null) {
+			final InputStream is = DriveUtil.downloadFile(service, file);
+			if (is != null) {
+				log("Downloading: " + filePath);
+				Util.download(is, filePath);
+			}
+		}
+	}
+
 	private static void uploadNewRecursive(final Drive service,
 			final DriveFileMap fileMap, final java.io.File root)
 			throws IOException {
+		log("uploadNewRecursive");
 		final java.io.File[] files = root.listFiles();
 		for (final java.io.File file : files) {
 			if (file.isDirectory()) {
@@ -85,64 +165,25 @@ public class JDriveUtil {
 		}
 	}
 
-	private static void syncLatest(final Drive service, final List<File> files,
-			final DriveFileMap fileMap) throws IOException {
-		for (final File file : files) {
-			if (!file.getEditable()
-					|| DriveUtil.MIME_FOLDER.equals(file.getMimeType())) {
-				continue;
-			}
-			final String filePath = fileMap.put(file);
-			final java.io.File local = new java.io.File(filePath);
-			if (local.exists()) {
-				FileInputStream fis = null;
-				try {
-					fis = new FileInputStream(filePath);
-					if (Util.md5(fis).equalsIgnoreCase(file.getMd5Checksum())) {
-						log("File already exists: " + filePath);
-						continue;
-					}
-				} finally {
-					Util.close(fis);
-				}
-			}
-
-			if (local.exists() && (local.lastModified() > getDate(file))) {
-				log("Uploading " + filePath);
-				final String mimeType = MimetypesFileTypeMap
-						.getDefaultFileTypeMap().getContentType(local);
-				DriveUtil.uploadFile(service, filePath, file.getTitle(),
-						file.getDescription(), mimeType);
-			} else {
-				log("Download file? " + filePath);
-				final String downloadUrl = file.getDownloadUrl();
-				if (downloadUrl != null) {
-					final InputStream is = DriveUtil
-							.downloadFile(service, file);
-					if (is != null) {
-						log("Downloading: " + filePath);
-						Util.download(is, filePath);
-					}
-				}
-			}
-		}
+	private static void overwrite(final Drive service, final String filePath,
+			final File remote) throws IOException {
+		DriveUtil.delete(service, remote.getId());
+		DriveUtil.uploadFile(service, filePath, remote);
 	}
 
-	private static void mkdirs(final List<File> files,
-			final DriveFileMap fileMap) {
-		for (final File file : files) {
-			if (!file.getEditable()
-					|| !DriveUtil.MIME_FOLDER.equals(file.getMimeType())) {
-				continue;
+	private static boolean equals(final String local, final File remote) {
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(local);
+			if (Util.md5(fis).equalsIgnoreCase(remote.getMd5Checksum())
+					&& !Util.valueOf(remote.getExplicitlyTrashed())) {
+				return true;
 			}
-			// log("file=" + file.toPrettyString());
-			final String fullPath = fileMap.put(file);
-			final java.io.File file2 = new java.io.File(fullPath);
-			if (!file2.exists()) {
-				log("mkdir " + fullPath);
-				file2.mkdirs();
-			}
+		} catch (final FileNotFoundException e) {
+		} finally {
+			Util.close(fis);
 		}
+		return false;
 	}
 
 	private static long getDate(final File file) {

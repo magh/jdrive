@@ -1,5 +1,7 @@
 package jdrive.glib;
 
+import static jdrive.ulib.Util.log;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -74,26 +76,32 @@ public class DriveUtil {
 				.setClientSecrets(clientId, clientSecret).build();
 	}
 
+	public static String uploadFile(final Drive service, final String filePath,
+			final File remote) throws IOException {
+		final java.io.File local = new java.io.File(filePath);
+		return uploadFile(service, getParent(remote).getId(), filePath,
+				local.getName(), remote.getDescription());
+	}
+
 	public static String uploadFile(final Drive service, final String parentId,
-			final java.io.File file)
+			final java.io.File file) throws IOException {
+		return uploadFile(service, parentId, file.getPath(), file.getName(), "");
+	}
+
+	public static String uploadFile(final Drive service, final String parentId,
+			final String filePath, final String title, final String description)
 			throws IOException {
 		final String mimeType = MimetypesFileTypeMap.getDefaultFileTypeMap()
-				.getContentType(file);
-		return uploadFile(service, parentId, file.getPath(), file.getName(),
-				"", mimeType);
+				.getContentType(filePath);
+		return uploadFile(service, parentId, filePath, title, description,
+				mimeType);
 	}
 
 	public static String uploadFile(final Drive service, final String parentId,
-			final String fileName,
-			final String title, final String description) throws IOException {
-		return uploadFile(service, parentId, fileName, title, description,
-				"application/octet-stream");
-	}
+			final String filePath, final String title,
+			final String description, final String mimeType) throws IOException {
 
-	public static String uploadFile(final Drive service, final String parentId,
-			final String fileName,
-			final String title, final String description, final String mimeType)
-			throws IOException {
+		log(String.format("uploadFile: %s MimeType %s", filePath, mimeType));
 
 		// Insert a file
 		final File body = new File();
@@ -104,7 +112,7 @@ public class DriveUtil {
 		parentRef.setId(parentId);
 		body.setParents(Arrays.asList(parentRef));
 
-		final java.io.File fileContent = new java.io.File(fileName);
+		final java.io.File fileContent = new java.io.File(filePath);
 		final FileContent mediaContent = new FileContent(mimeType, fileContent);
 
 		final File file = service.files().insert(body, mediaContent).execute();
@@ -147,6 +155,15 @@ public class DriveUtil {
 		body.setMimeType(MIME_FOLDER);
 		final File file = service.files().insert(body).execute();
 		return file.getId();
+	}
+
+	public static ParentReference getParent(final File remote) {
+		return remote.getParents().get(0);
+	}
+
+	public static void delete(final Drive service, final String fileId)
+			throws IOException {
+		service.files().delete(fileId).execute();
 	}
 
 }

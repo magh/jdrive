@@ -1,5 +1,8 @@
 package jdrive.lib;
 
+import java.util.List;
+
+import jdrive.glib.DriveUtil;
 import jdrive.ulib.FileMap;
 import jdrive.ulib.Util;
 
@@ -8,12 +11,17 @@ import com.google.api.services.drive.model.ParentReference;
 
 public class DriveFileMap extends FileMap<String> {
 
-	public String put(final File file) {
-		final ParentReference parent = file.getParents().get(0);
-		if (parent.getIsRoot() && !contains(parent.getId())) {
-			setRoot(parent.getId());
+	public String put(final File file, final List<File> files) {
+		final ParentReference parent = DriveUtil.getParent(file);
+		final String parentId = parent.getId();
+		if (parent.getIsRoot() && !contains(parentId)) {
+			setRoot(parentId);
 		}
-		return put(file.getId(), parent.getId(), getFileName(file));
+		if (!contains(parentId)) {
+			final File parentFile = findFile(parentId, files);
+			put(parentFile, files);
+		}
+		return put(file.getId(), parentId, getFileName(file));
 	}
 
 	private String getFileName(final File file) {
@@ -24,6 +32,15 @@ public class DriveFileMap extends FileMap<String> {
 			fileName = file.getTitle();
 		}
 		return fileName;
+	}
+
+	private static File findFile(final String fileId, final List<File> files) {
+		for (final File file : files) {
+			if (file.getId().equals(fileId)) {
+				return file;
+			}
+		}
+		return null;
 	}
 
 }
